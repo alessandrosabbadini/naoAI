@@ -1,0 +1,20 @@
+.env
+.vscode/
+
+
+input.wav
+conversation_context.txt
+
+
+# python
+__pycache__/
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+Thumbs.db
+Desktop.ini

@@ -1,12 +1,13 @@
 import requests
 import numpy as np
 import os
-import openai
+from openai import AzureOpenAI
 import speech_recognition as sr
 from urllib.error import URLError
 from dotenv import load_dotenv
 import time
 import tiktoken
+import re
 
 
 # setup
@@ -18,11 +19,14 @@ time_between_audio_chunks = number_of_samples_per_chunk / sampling_frequency # i
 corrected_time_between_audio_chunks = time_between_audio_chunks*0.8 # considering other delays
 max_response_tokens = 250
 token_limit = 4096
-openai.api_key = os.getenv("AZURE_OPENAI_KEY")
-openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
-openai.api_type = 'azure'
-openai.api_version = '2023-05-15'
 BODY_URL = "http://localhost:5004"  # assuming it runs locally
+
+# Inizializza il client Azure OpenAI (nuova versione)
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_KEY"),
+    api_version="2024-12-01-preview",  # versione API aggiornata
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
 
 
 class NaoStream:
@@ -91,7 +95,7 @@ def get_user_text():
         try:
             print("Transcribing...")
             start_time = time.time()
-            text = recognizer.recognize_google(audio_data)
+            text = recognizer.recognize_google(audio_data, language="it-IT")
             print(f"Transcribing took {time.time() - start_time} seconds")
             print("You said: " + text)
             return text
@@ -114,15 +118,15 @@ def get_gpt_text(conversation_context):
 
     # process the received input with GPT
     start = time.time()
-    response = openai.ChatCompletion.create(
-        engine="NAO35",
+    response = client.chat.completions.create(
+        model="gpt-5.2-chat",  # cambiato da 'engine' a 'model'
         messages=conversation_context
     )
     end = time.time()
-    print(f"{response.engine} took {end - start} seconds to respond")
+    print(f"{response.model} took {end - start} seconds to respond")
 
-    # xtract the GPT response
-    gpt_message = response['choices'][0]['message']['content']
+    # extract the GPT response
+    gpt_message = response.choices[0].message.content
 
     print(f"Nao: {gpt_message}")
 
@@ -130,8 +134,32 @@ def get_gpt_text(conversation_context):
 
 
 def send_gpt_text_to_body(gpt_message):
-
-    requests.post(f"{BODY_URL}/talk", json={"message": gpt_message}) # send the GPT response to the body
+    # Rimuovi emoji e caratteri speciali
+    clean_message = remove_emojis(gpt_message)
+    print(f"Sending to robot: {clean_message}")
+    try:
+        response = requests.post(f"{BODY_URL}/talk", json={"message": clean_message})
+        print(f"Response status: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending to robot: {e}")
+    
+def remove_emojis(text):
+    """
+    Rimuove TUTTI i caratteri non-ASCII (emoji, simboli speciali) 
+    e la formattazione Markdown per garantire compatibilità con NAO text-to-speech
+    """
+    # Rimuove tutti i caratteri non-ASCII (mantiene solo caratteri standard inglesi)
+    # ord(char) < 128 significa caratteri ASCII base (lettere, numeri, punteggiatura)
+    cleaned = ''.join(char for char in text if ord(char) < 128)
+    
+    # Rimuove formattazione Markdown che potrebbe causare problemi
+    cleaned = cleaned.replace('*', '').replace('_', '').replace('`', '')
+    cleaned = cleaned.replace('#', '').replace('>', '').replace('-', '')
+    
+    # Rimuove spazi multipli e pulisce
+    cleaned = ' '.join(cleaned.split())
+    
+    return cleaned
 
 
 def save_conversation(context, filename):

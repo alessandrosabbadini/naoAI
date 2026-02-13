@@ -5,12 +5,13 @@ import time
 app = Flask(__name__)
 
 nao = True
-nao_IP = "nao.local"
+nao_IP = "172.20.10.10"
 nao_port = 9559
 sleep_time = 0.01
 
 tts = ALProxy("ALTextToSpeech", nao_IP, nao_port)
 tts.setVolume(1.0) # define volume of the robot
+tts.setLanguage("Italian") 
 animatedSpeech = ALProxy("ALAnimatedSpeech", nao_IP, nao_port)
  
 

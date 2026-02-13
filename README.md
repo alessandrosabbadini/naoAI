@@ -34,28 +34,5 @@ AZURE_OPENAI_ENDPOINT=https://nameofyourendpoint.openai.azure.com/
 4. **Run the Client**: Run `brain.py` in your Python 3.x environment. This script will start listening for speech, process it, and interact with GPT for generating responses.
 5. **Talk to the NAO Robot**: Speak to the NAO robot. The system will capture your speech, transcribe it, and send it to GPT. The generated response from GPT will be spoken by the NAO robot.
 
-### More details on the venv27 environment
-There are probably many possible ways to do this, but here is one way that worked for us (on a 2019 MacBook Pro running macOS Sonoma 14.1.1):
-
-Use the following command to create a Python 2.7 virtual environment:
-```bash
-/usr/local/bin/python2.7 -m virtualenv /path/to/your/venv27
-```
-Add the following convenience function to your .bash_profile:
-```bash
-function python27() {
-    conda deactivate
-    source /path/to/your/venv27/bin/activate
-    export PYTHONPATH=${PYTHONPATH}:/path/to/naoqi-sdk/lib/python2.7/site-packages
-    export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:/path/to/naoqi-sdk/lib
-    export QI_SDK_PREFIX=/path/to/naoqi-sdk
-    /path/to/your/venv27/bin/python2.7 "$@"
-}
-```
-When you want to run the server component, use the `python27` command instead of `python` to activate the Python 2.7 environment:
-```bash
-python27 body.py
-```
-
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.txt) file for details.

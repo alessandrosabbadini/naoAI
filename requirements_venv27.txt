@@ -1,0 +1,11 @@
+# requirements_venv27.txt
+# Python 2.7 environment — used by body.py (NAOqi / Flask server)
+# Install with: pip2 install -r requirements_venv27.txt
+
+Flask==1.1.4
+Werkzeug==0.16.1
+Jinja2==2.11.3
+MarkupSafe==1.1.1
+itsdangerous==1.1.0
+click==7.1.2
+requests==2.27.1

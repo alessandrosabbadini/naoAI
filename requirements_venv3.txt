@@ -1,0 +1,10 @@
+# requirements_venv3.txt
+# Python 3.10+ environment — used by brain.py (GPT / speech recognition)
+# Install with: pip3 install -r requirements_venv3.txt
+
+requests==2.31.0
+numpy==1.26.3
+openai==1.35.0
+SpeechRecognition==3.10.0
+python-dotenv==1.0.0
+tiktoken==0.5.1

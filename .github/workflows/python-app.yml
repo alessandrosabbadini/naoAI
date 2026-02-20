@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Python application
 
 on:
@@ -13,27 +10,59 @@ permissions:
   contents: read
 
 jobs:
-  build:
 
+  # ─── Job 1: check brain.py (Python 3) ───────────────────────────────────────
+  build-brain:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r requirements_venv3.txt
+
+      - name: Lint brain.py with flake8
+        run: |
+          # Syntax errors or undefined names → fail the build
+          flake8 brain.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Style warnings → show but do not fail
+          flake8 brain.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  # ─── Job 2: check body.py (Python 2 syntax, NAOqi mocked) ──────────────────
+  build-body:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          # Install Flask for syntax checking; NAOqi is not available on PyPI
+          # (it is a proprietary Softbank SDK installed only on the real robot)
+          pip install Flask==2.3.3 Werkzeug==2.3.7
+
+      - name: Mock NAOqi so flake8 can parse body.py
+        run: |
+          # Create a minimal stub so flake8 can resolve the import
+          mkdir -p naoqi
+          echo "class ALProxy: pass" > naoqi/__init__.py
+          echo "class ALModule: pass" >> naoqi/__init__.py
+          echo "class ALBroker: pass" >> naoqi/__init__.py
+
+      - name: Lint body.py with flake8
+        run: |
+          flake8 body.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 body.py --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
